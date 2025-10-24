@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Management System</title>
+    <style>
+        body { font-family: Arial; background: #f4f6f9; margin: 0; }
+        header { background: #004aad; color: white; padding: 15px; text-align: center; }
+        main { width: 90%; max-width: 800px; margin: 30px auto; background: white; padding: 20px; border-radius: 10px; }
+        input, button { padding: 8px; margin: 5px; }
+        button { background: #004aad; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #00327a; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #004aad; color: white; }
+    </style>
+</head>
+<body>
+<header><h1>Student Management System</h1></header>
+
+<main>
+    <h2>Add Student</h2>
+    <input type="number" id="rollNo" placeholder="Roll No">
+    <input type="text" id="name" placeholder="Name">
+    <input type="number" id="marks" placeholder="Marks">
+    <button onclick="addStudent()">Add</button>
+
+    <h2>Search Student</h2>
+    <input type="number" id="searchRoll" placeholder="Enter Roll No">
+    <button onclick="searchStudent()">Search</button>
+    <div id="searchResult"></div>
+
+    <h2>All Students</h2>
+    <button onclick="loadStudents()">Load Students</button>
+    <table>
+        <thead><tr><th>Roll No</th><th>Name</th><th>Marks</th><th>Grade</th></tr></thead>
+        <tbody id="studentTable"></tbody>
+    </table>
+</main>
+
+<script>
+const BASE_URL = "http://localhost:8080/api/students";
+
+async function addStudent() {
+    const rollNo = document.getElementById("rollNo").value;
+    const name = document.getElementById("name").value;
+    const marks = document.getElementById("marks").value;
+
+    const student = { rollNo, name, marks };
+
+    const res = await fetch(BASE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(student)
+    });
+
+    if (res.ok) {
+        alert("Student Added!");
+        loadStudents();
+    } else {
+        alert("Error adding student");
+    }
+}
+
+async function loadStudents() {
+    const res = await fetch(BASE_URL);
+    const students = await res.json();
+
+    const table = document.getElementById("studentTable");
+    table.innerHTML = "";
+
+    students.forEach(s => {
+        const grade = getGrade(s.marks);
+        table.innerHTML += `<tr><td>${s.rollNo}</td><td>${s.name}</td><td>${s.marks}</td><td>${grade}</td></tr>`;
+    });
+}
+
+async function searchStudent() {
+    const rollNo = document.getElementById("searchRoll").value;
+    const res = await fetch(`${BASE_URL}/${rollNo}`);
+
+    if (res.status === 200) {
+        const s = await res.json();
+        if (s && s.name) {
+            document.getElementById("searchResult").innerHTML = `
+                <p><b>Roll No:</b> ${s.rollNo}</p>
+                <p><b>Name:</b> ${s.name}</p>
+                <p><b>Marks:</b> ${s.marks}</p>
+                <p><b>Grade:</b> ${getGrade(s.marks)}</p>`;
+        } else {
+            document.getElementById("searchResult").innerHTML = "Student not found!";
+        }
+    } else {
+        document.getElementById("searchResult").innerHTML = "Error fetching student.";
+    }
+}
+
+function getGrade(marks) {
+    marks = parseFloat(marks);
+    if (marks >= 90) return "A+";
+    else if (marks >= 80) return "A";
+    else if (marks >= 70) return "B+";
+    else if (marks >= 60) return "B";
+    else if (marks >= 50) return "C";
+    else return "Fail";
+}
+</script>
+</body>
+</html>
